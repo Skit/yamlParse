@@ -30,12 +30,12 @@ class Main
     {
         $this->_time = microtime(true);
 
-        self::determineView();
+        self::determineAction();
     }
 
     public function index(){
 
-        self::determineView()->loadView();
+        self::loadView('search');
     }
 
     public function item(){
@@ -52,14 +52,14 @@ class Main
         if($result){
 
             $this->loadView('item', [
-                '{model}'=>$result['model'],
-                '{picture}'=>$result['picture'],
-                '{price}'=>$result['price'],
-                '{description}'=>$result['description'],
-                '{item_id}'=>$result['item_id'],
-                '{vendor}'=>$result['vendor'],
-                '{category}'=>$result['category_name'],
-                '{shop}'=>$result['shop_name'],
+                'model'=>$result['model'],
+                'picture'=>$result['picture'],
+                'price'=>$result['price'],
+                'description'=>$result['description'],
+                'item_id'=>$result['item_id'],
+                'vendor'=>$result['vendor'],
+                'category'=>$result['category_name'],
+                'shop'=>$result['shop_name'],
             ]);
         }else{
 
@@ -74,7 +74,6 @@ class Main
             $this->xml = (new LoadXML($_POST['url']))
                 ->checkFormat()
                 ->saveStream()
-                ->unsetStreamData()
                 ->getXMLObject();
 
             $shop = new Shop();
@@ -85,10 +84,17 @@ class Main
 
             $category = new Category();
             $category->shop_id = $shop->getLastInsertId();
-            $category->batchInsert($this->xml->shop->categories->category);
+            $category->batchInsert($this->xml->shop->categories->category, true);
 
             $offer = new Offer();
-            $offer->batchInsert($this->xml->shop->offers->offer);
+            $offer->batchInsert($this->xml->shop->offers->offer, true);
+
+            $categoryCount = $this->xml->shop->categories->category->count();
+            $offerCount = $this->xml->shop->offers->offer->count();
+
+            $message = urlencode("\"{$this->xml->shop->name}\" обработано: {$categoryCount} категорий, {$offerCount} товаров");
+
+            $this->redirect('load', "&m={$message}");
         }
 
         $this->loadView('import');
@@ -96,7 +102,6 @@ class Main
 
     public function runAction(){
 
-        self::determineAction();
         call_user_func([$this, $this->_currentAction]);
     }
 
@@ -105,29 +110,25 @@ class Main
         $this->_currentAction = (isset($_REQUEST['a'])) ? $_REQUEST['a'] : self::getDefaultAction();
     }
 
-    public function determineView(){
 
-        $this->_currentView = (isset($_REQUEST['r'])) ? $_REQUEST['r'] : self::getDefaultView();
-        return $this;
+    public function redirect($action, $params=''){
+
+        header("Location: /index.php?a={$action}{$params}");
     }
 
-    public function loadView($view=null, array $parseData=[]){
+    public function loadView($view=null, array $data=[]){
 
         if($view)
             $this->_currentView = $view;
 
         $path = dirname(__DIR__) .$this->_pathView .DIRECTORY_SEPARATOR ."{$this->_currentView}.php";
-        $data = file_get_contents($path);
 
-        if(!empty($parseData)){
+        ob_start();
+        include_once ($path);
+        $view = ob_get_contents();
+        ob_end_clean();
 
-            $search = array_keys($parseData);
-            $parseData = array_flip($parseData);
-            $replace= array_keys($parseData);
-
-            $data = str_replace($search, $replace, $data);
-        }
-        print $data;
+        print $view;
     }
 
     public function getDefaultView(){

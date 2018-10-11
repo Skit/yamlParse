@@ -1,11 +1,24 @@
-<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-<!------ Include the above in your HEAD tag ---------->
-
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
+<!doctype html>
+<html>
+<header>
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+    <link href="../web/main.css" rel="stylesheet">
+</header>
+<body>
+<div class="wrapper">
+    <nav class="navigation">
+        <ul>
+            <li>
+                <a class="active" href="#">Import</a>
+            </li>
+            <li class="last">
+                <a href="/index.php?a=index">Search</a>
+            </li>
+        </ul>
+    </nav>
+</div>
 <div class="container">
-    <br/>
     <div class="row justify-content-center">
         <div class="col-12 col-md-10 col-lg-8">
             <form class="card card-sm" action="index.php?a=load" method="post">
@@ -25,6 +38,12 @@
                 </div>
             </form>
         </div>
+        <?php if(isset($_GET['m'])) : ?>
+            <div id="message"><?=urldecode($_GET['m']) ?></div>
+        <?php endif; ?>
         <!--end of col-->
     </div>
 </div>
+</body>
+</html>
+

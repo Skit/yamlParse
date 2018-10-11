@@ -4,18 +4,38 @@ namespace models;
 class LoadXML
 {
     private
+        $_url,
         $_stream,
         $_filePath = 'cache',
-        $_cacheFile;
+        $_cacheFile,
+        $_actuallyCache = false;
 
     public function __construct($url)
     {
-        $this->_stream = self::_getXMLFromUrl($url);
+        $this->_url = $url;
+        $this->_cacheFile = $this->_filePath .DIRECTORY_SEPARATOR .self::getFileNameByUrl();
+        $this->_stream = self::checkCacheStream()->getXMLData();
     }
 
-    public function getFileNameByFileHash($file){
+    public function checkCacheStream(){
 
-        return substr(md5_file($file), 0, 12);
+        if(file_exists($this->_cacheFile)){
+
+            if((time() - filemtime($this->_cacheFile)) < 300)
+                $this->_actuallyCache = true;
+        }
+
+        return $this;
+    }
+
+    public function getXMLData(){
+
+        return $this->_actuallyCache ? file_get_contents($this->_cacheFile) : self::_getXMLFromUrl();
+    }
+
+    public function getFileNameByUrl(){
+
+        return substr(md5($this->_url), 0, 12);
     }
 
     public function checkFormat(){
@@ -27,11 +47,10 @@ class LoadXML
         return $this;
     }
 
+    // TODO: сделать функцию удаления всех устаревших файлов
     public function saveStream(){
 
-        $this->_cacheFile = $this->_filePath .DIRECTORY_SEPARATOR .self::_getFileNameByFileHashContent($this->_stream);
-
-        if(!file_exists($this->_cacheFile)){
+        if(!$this->_actuallyCache){
 
             if(!file_put_contents($this->_cacheFile, $this->_stream))
                 throw new \Exception("Не удается сохранить поток в файл!");
@@ -40,20 +59,12 @@ class LoadXML
         return $this;
     }
 
-    public function unsetStreamData(){
-
-        unset($this->_stream);
-
-        return $this;
-    }
-
     public function getXMLObject(){
 
-        $xml = file_get_contents($this->_cacheFile);
-        return simplexml_load_string($xml);
+        return simplexml_load_string($this->_stream);
     }
 
-    private function _getFileNameByFileHashContent($content){
+/*    private function _getFileNameByFileHashContent($content){
 
         $tmp = tmpfile();
         fwrite($tmp, $content);
@@ -63,16 +74,17 @@ class LoadXML
         fclose($tmp);
 
         return $filename;
-    }
+    }*/
 
-    private function _getXMLFromUrl($url){
+    private function _getXMLFromUrl(){
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_URL, $this->_url);
+        curl_setopt($ch, CURLOPT_VERBOSE, false);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        $data = curl_exec($ch);
 
+        $data = curl_exec($ch);
         self::_checkUrl(curl_getinfo($ch,CURLINFO_HTTP_CODE));
         curl_close($ch);
 
