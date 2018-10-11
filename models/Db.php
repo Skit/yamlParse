@@ -33,7 +33,7 @@ class Db
 
             $this->_db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->_db->exec("set names utf8");
-            $this->_db->query("SET wait_timeout=1200;");
+            $this->_db->query("SET wait_timeout=1600");
         }
         catch(\PDOExceptiontion $e) {
             print $e->getMessage();
